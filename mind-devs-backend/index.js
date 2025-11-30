@@ -1,28 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const pool = require('./db'); // Importamos la conexión
-const nodemailer = require('nodemailer');
-
-// Configuración del correo
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    },
-    tls: {
-        rejectUnauthorized: false
-    },
-    // Opciones de red para evitar timeouts en Render
-    connectionTimeout: 10000,
-    greetingTimeout: 5000,
-    socketTimeout: 10000,
-    dns: {
-        useIPv4: true // Forzar IPv4
-    }
-});
+const { Resend } = require('resend');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -89,18 +69,18 @@ app.post('/registro', async (req, res) => {
             [nombre, email, password, codigo, expiracion]
         );
 
-        // Enviar correo
-        const mailOptions = {
-            from: `"MIND DEVS" <${process.env.EMAIL_USER}>`,
-            to: email,
+        // Enviar correo con Resend
+        const { error } = await resend.emails.send({
+            from: 'onboarding@resend.dev',
+            to: email, // OJO: En modo prueba solo funciona si 'email' es el verificado en Resend
             subject: 'Tu código de verificación',
-            text: `Hola ${nombre}, tu código es: ${codigo}. Expira en 10 minutos.`
-        };
-
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) console.log(error);
-            else console.log('Email enviado: ' + info.response);
+            html: `<p>Hola ${nombre}, tu código es: <strong>${codigo}</strong>. Expira en 10 minutos.</p>`
         });
+
+        if (error) {
+            console.error('Error Resend:', error);
+            // No bloqueamos el registro, pero logueamos el error
+        }
 
         res.json({ message: "Usuario creado, verifica tu correo" });
 
@@ -465,16 +445,18 @@ app.post('/contacto', async (req, res) => {
         }
 
         // Configurar el correo que TE llegará a TI (Admin)
-        const mailOptions = {
-            from: `"Soporte MIND DEVS" <${process.env.EMAIL_USER}>`, // Quien envía (el sistema)
-            to: process.env.EMAIL_USER, // A QUIEN LE LLEGA
-            replyTo: email,
+        const { error } = await resend.emails.send({
+            from: 'onboarding@resend.dev',
+            to: process.env.EMAIL_USER, // Usamos tu correo de admin
+            reply_to: email,
             subject: `📢 Nueva Ayuda/Soporte de: ${email}`,
-            text: `Has recibido un nuevo mensaje desde el Help Modal:\n\nUsuario: ${email}\n\nMensaje:\n${message}`
-        };
+            html: `<p>El usuario <strong>${email}</strong> escribió:</p><p>${message}</p>`
+        });
 
-        // Enviar
-        await transporter.sendMail(mailOptions);
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ error: error.message });
+        }
 
         console.log(`📩 Soporte enviado de ${email}`);
         res.json({ success: true, message: "Mensaje enviado a soporte" });
@@ -507,15 +489,19 @@ app.post('/solicitar-recuperacion', async (req, res) => {
             [codigo, expiracion, email]
         );
 
-        // Enviar correo
-        const mailOptions = {
-            from: `"Seguridad MIND DEVS" <${process.env.EMAIL_USER}>`,
-            to: email,
+        // Enviar correo con Resend
+        const { error } = await resend.emails.send({
+            from: 'onboarding@resend.dev',
+            to: email, // OJO: En modo prueba solo funciona si 'email' es el verificado en Resend
             subject: 'Recuperar Contraseña',
-            text: `Tu código para restablecer contraseña es: ${codigo}. Expira en 10 min.`
-        };
+            html: `<p>Tu código para restablecer contraseña es: <strong>${codigo}</strong>. Expira en 10 min.</p>`
+        });
 
-        await transporter.sendMail(mailOptions);
+        if (error) {
+            console.error('Error Resend:', error);
+            return res.status(500).json({ error: 'Error enviando correo' });
+        }
+
         res.json({ success: true, message: "Código enviado" });
 
     } catch (err) {
