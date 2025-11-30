@@ -7,8 +7,8 @@ const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'nainjuarez8@gmail.com',
-        pass: 'fvnoncxzibgzdrdt'
+        user: process.env.EMAIL_USER, // Leemos de la nube
+        pass: process.env.EMAIL_PASS  // Leemos de la nube
     }
 });
 
@@ -457,8 +457,8 @@ app.post('/contacto', async (req, res) => {
 
         // Configurar el correo que TE llegará a TI (Admin)
         const mailOptions = {
-            from: 'MIND DEVS System <nainjuarez8@gmail.com>', // Quien envía (el sistema)
-            to: 'nainjuarez8@gmail.com', // A QUIEN LE LLEGA
+            from: `"Soporte MIND DEVS" <${process.env.EMAIL_USER}>`, // Quien envía (el sistema)
+            to: process.env.EMAIL_USER, // A QUIEN LE LLEGA
             replyTo: email,
             subject: `📢 Nueva Ayuda/Soporte de: ${email}`,
             text: `Has recibido un nuevo mensaje desde el Help Modal:\n\nUsuario: ${email}\n\nMensaje:\n${message}`
