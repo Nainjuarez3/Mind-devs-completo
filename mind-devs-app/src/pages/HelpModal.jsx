@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Send, MessageSquare, Loader } from 'lucide-react';
+import { API_URL } from '../config';
 import AlertModal from '../components/AlertModal';
 
 const HelpModal = ({ isOpen, onClose }) => {
@@ -29,7 +30,7 @@ const HelpModal = ({ isOpen, onClose }) => {
 
         try {
             // CONEXIÓN CON EL BACKEND
-            const response = await fetch('http://localhost:3000/contacto', {
+            const response = await fetch(`${API_URL}/contacto`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, message })
