@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Lock, Save, LogOut, Award, Zap, Trophy, ArrowLeft } from 'lucide-react';
 import { API_URL } from '../config';
+import AlertModal from '../components/AlertModal';
 
 const ProfilePage = ({ navigateTo }) => {
     // 1. Cargar datos del usuario guardado
@@ -14,6 +15,19 @@ const ProfilePage = ({ navigateTo }) => {
     const [password, setPassword] = useState('');
     const [isEditing, setIsEditing] = useState(false);
     const [insignias, setInsignias] = useState([]);
+
+    // Modal State
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalConfig, setModalConfig] = useState({ type: 'info', title: '', message: '' });
+
+    const showAlert = (type, title, message) => {
+        setModalConfig({ type, title, message });
+        setModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setModalOpen(false);
+    };
 
     // Si no hay usuario, mandar al login (Protección básica)
     useEffect(() => {
@@ -33,7 +47,7 @@ const ProfilePage = ({ navigateTo }) => {
     const handleUpdate = async (e) => {
         e.preventDefault();
         if (!password) {
-            alert("Por favor confirma tu contraseña actual o escribe una nueva para guardar cambios.");
+            showAlert('info', 'Contraseña Requerida', 'Por favor confirma tu contraseña actual o escribe una nueva para guardar cambios.');
             return;
         }
 
@@ -50,12 +64,13 @@ const ProfilePage = ({ navigateTo }) => {
                 localStorage.setItem('usuario', JSON.stringify(data));
                 setUsuario(data);
                 setIsEditing(false);
-                alert("¡Perfil actualizado!");
+                showAlert('success', '¡Perfil Actualizado!', 'Tus datos han sido actualizados correctamente.');
             } else {
-                alert("Error al actualizar");
+                showAlert('error', 'Error', 'No se pudo actualizar el perfil. Inténtalo de nuevo.');
             }
         } catch (error) {
             console.error(error);
+            showAlert('error', 'Error de Conexión', 'No se pudo conectar con el servidor.');
         }
     };
 
@@ -69,6 +84,13 @@ const ProfilePage = ({ navigateTo }) => {
     return (
         // FONDO PRINCIPAL: dark:bg-gray-900
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans pb-10 transition-colors duration-300">
+            <AlertModal
+                isOpen={modalOpen}
+                onClose={closeModal}
+                type={modalConfig.type}
+                title={modalConfig.title}
+                message={modalConfig.message}
+            />
 
             {/* HEADER DE PERFIL (Se mantiene azul, se ve bien en ambos modos) */}
             <div className="bg-mind-primary text-white p-8 pb-24 relative overflow-hidden">

@@ -1,17 +1,31 @@
 import React, { useState } from 'react';
-import { X, Send, MessageSquare, Loader } from 'lucide-react'; // Agregamos Loader
+import { X, Send, MessageSquare, Loader } from 'lucide-react';
+import AlertModal from '../components/AlertModal';
 
 const HelpModal = ({ isOpen, onClose }) => {
     const [email, setEmail] = useState('');
     const [message, setMessage] = useState('');
     const [isSent, setIsSent] = useState(false);
-    const [isLoading, setIsLoading] = useState(false); // Nuevo estado de carga
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Modal State
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalConfig, setModalConfig] = useState({ type: 'info', title: '', message: '' });
+
+    const showAlert = (type, title, message) => {
+        setModalConfig({ type, title, message });
+        setModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setModalOpen(false);
+    };
 
     if (!isOpen) return null;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setIsLoading(true); // Activamos carga
+        setIsLoading(true);
 
         try {
             // CONEXIÓN CON EL BACKEND
@@ -32,18 +46,25 @@ const HelpModal = ({ isOpen, onClose }) => {
                     onClose();
                 }, 2500);
             } else {
-                alert("Hubo un error al enviar tu mensaje. Intenta más tarde.");
+                showAlert('error', 'Error al Enviar', 'Hubo un error al enviar tu mensaje. Intenta más tarde.');
                 setIsLoading(false);
             }
         } catch (error) {
             console.error(error);
-            alert("Error de conexión con el servidor.");
+            showAlert('error', 'Error de Conexión', 'Error de conexión con el servidor.');
             setIsLoading(false);
         }
     };
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+            <AlertModal
+                isOpen={modalOpen}
+                onClose={closeModal}
+                type={modalConfig.type}
+                title={modalConfig.title}
+                message={modalConfig.message}
+            />
 
             <div className="bg-white w-full max-w-lg rounded-3xl border-4 border-mind-dark shadow-hard relative overflow-hidden">
 

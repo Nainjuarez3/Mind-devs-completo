@@ -1,10 +1,24 @@
 import React, { useState } from 'react';
 import { ShoppingCart, Zap, Coins, ArrowLeft } from 'lucide-react';
-import { API_URL } from '../config'; // Asegúrate de importar esto si ya lo usas
+import { API_URL } from '../config';
+import AlertModal from '../components/AlertModal';
 
 const StorePage = ({ navigateTo }) => {
     const [usuario, setUsuario] = useState(JSON.parse(localStorage.getItem('usuario')));
     const [loading, setLoading] = useState(false);
+
+    // Modal State
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalConfig, setModalConfig] = useState({ type: 'info', title: '', message: '' });
+
+    const showAlert = (type, title, message) => {
+        setModalConfig({ type, title, message });
+        setModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setModalOpen(false);
+    };
 
     const comprarItem = async (itemKey) => {
         setLoading(true);
@@ -21,21 +35,27 @@ const StorePage = ({ navigateTo }) => {
                 const usuarioActualizado = { ...usuario, monedas: data.monedas, energia: data.energia };
                 setUsuario(usuarioActualizado);
                 localStorage.setItem('usuario', JSON.stringify(usuarioActualizado));
-                alert(data.message);
+                showAlert('success', '¡Compra Exitosa!', data.message);
             } else {
-                alert(data.error);
+                showAlert('error', 'Error en la Compra', data.error);
             }
         } catch (error) {
             console.error(error);
-            alert("Error de conexión");
+            showAlert('error', 'Error de Conexión', 'No se pudo conectar con el servidor.');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        // AGREGADO: dark:bg-gray-900
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 font-sans transition-colors duration-300">
+            <AlertModal
+                isOpen={modalOpen}
+                onClose={closeModal}
+                type={modalConfig.type}
+                title={modalConfig.title}
+                message={modalConfig.message}
+            />
 
             {/* HEADER: dark:bg-gray-800 dark:border-gray-700 */}
             <div className="bg-white dark:bg-gray-800 p-4 shadow-sm flex items-center justify-between sticky top-0 z-10 border-b border-transparent dark:border-gray-700 transition-colors">

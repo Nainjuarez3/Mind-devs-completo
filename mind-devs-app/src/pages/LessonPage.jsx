@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Zap, CheckCircle, AlertCircle, Loader } from 'lucide-react';
 import { API_URL } from '../config';
+import AlertModal from '../components/AlertModal';
 
 const LessonPage = ({ navigateTo, course, level }) => {
     const [leccionData, setLeccionData] = useState(null);
@@ -13,6 +14,22 @@ const LessonPage = ({ navigateTo, course, level }) => {
     const usuario = JSON.parse(localStorage.getItem('usuario'));
     const [energia, setEnergia] = useState(usuario.energia || 5);
 
+    // Modal State
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalConfig, setModalConfig] = useState({ type: 'info', title: '', message: '', onAction: null });
+
+    const showAlert = (type, title, message, onAction = null) => {
+        setModalConfig({ type, title, message, onAction });
+        setModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setModalOpen(false);
+        if (modalConfig.onAction) {
+            modalConfig.onAction();
+        }
+    };
+
     useEffect(() => {
         const fetchLeccion = async () => {
             try {
@@ -21,12 +38,11 @@ const LessonPage = ({ navigateTo, course, level }) => {
                     const data = await res.json();
                     setLeccionData(data);
                 } else {
-                    alert("No se encontró contenido para este nivel aún.");
-                    navigateTo('map');
+                    showAlert('info', 'Contenido No Disponible', 'No se encontró contenido para este nivel aún.', () => navigateTo('map'));
                 }
             } catch (error) {
                 console.error(error);
-                alert("Error de conexión");
+                showAlert('error', 'Error de Conexión', 'No se pudo conectar con el servidor.');
             } finally {
                 setLoading(false);
             }
@@ -44,8 +60,7 @@ const LessonPage = ({ navigateTo, course, level }) => {
             usuario.energia = data.energia;
             localStorage.setItem('usuario', JSON.stringify(usuario));
             if (data.energia === 0) {
-                alert("¡Te quedaste sin energía! ⚡");
-                navigateTo('dashboard');
+                showAlert('error', '¡Sin Energía!', '¡Te quedaste sin energía! ⚡ Vuelve más tarde o recarga en la tienda.', () => navigateTo('dashboard'));
             }
         } catch (error) { console.error(error); }
     };
@@ -78,18 +93,16 @@ const LessonPage = ({ navigateTo, course, level }) => {
                 const data = await response.json();
 
                 if (!data.aprobado) {
-                    alert(`Completado con ${mistakes} errores. ¡Inténtalo de nuevo sin fallar!`);
-                    navigateTo('map');
+                    showAlert('error', 'Nivel No Superado', `Completado con ${mistakes} errores. ¡Inténtalo de nuevo sin fallar!`, () => navigateTo('map'));
                     return;
                 }
                 if (data.monedas_ganadas > 0) {
-                    alert(`¡Nivel Perfecto! 🎉 +${data.monedas_ganadas} Monedas`);
+                    showAlert('success', '¡Nivel Perfecto!', `🎉 +${data.monedas_ganadas} Monedas`, () => navigateTo('map'));
                     usuario.monedas += data.monedas_ganadas;
                     localStorage.setItem('usuario', JSON.stringify(usuario));
                 } else {
-                    alert("Nivel completado. (Repetido, sin monedas extra).");
+                    showAlert('success', 'Nivel Completado', '¡Bien hecho! (Nivel repetido, sin monedas extra).', () => navigateTo('map'));
                 }
-                navigateTo('map');
             } catch (error) { console.error(error); navigateTo('map'); }
         }
     };
@@ -102,6 +115,13 @@ const LessonPage = ({ navigateTo, course, level }) => {
     return (
         // CONTENEDOR PRINCIPAL: dark:bg-gray-900
         <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col font-sans transition-colors duration-300">
+            <AlertModal
+                isOpen={modalOpen}
+                onClose={closeModal}
+                type={modalConfig.type}
+                title={modalConfig.title}
+                message={modalConfig.message}
+            />
 
             {/* HEADER */}
             <header className="px-6 py-6 flex items-center justify-between max-w-4xl mx-auto w-full">
