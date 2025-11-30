@@ -5,10 +5,12 @@ const nodemailer = require('nodemailer');
 
 // Configuración del correo
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // true para puerto 465, false para otros
     auth: {
-        user: process.env.EMAIL_USER, // Leemos de la nube
-        pass: process.env.EMAIL_PASS  // Leemos de la nube
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
     }
 });
 
