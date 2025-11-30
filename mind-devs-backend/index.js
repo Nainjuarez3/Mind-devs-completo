@@ -6,15 +6,14 @@ const nodemailer = require('nodemailer');
 // Configuración del correo
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // IMPORTANTE: debe ser false para el puerto 587
+    port: 465,
+    secure: true, // true para puerto 465, false para otros
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     },
-    // Esto ayuda si Render tiene problemas con los certificados de seguridad
     tls: {
-        rejectUnauthorized: false
+        rejectUnauthorized: false // Ayuda con algunos errores de certificados en la nube
     }
 });
 
@@ -78,7 +77,6 @@ app.post('/registro', async (req, res) => {
         const expiracion = new Date(Date.now() + 10 * 60000);
 
         // Guardar usuario con verificado = false
-        // NOTA: Asegúrate de que las columnas verificado, codigo_verificacion, codigo_expiracion existan en tu tabla usuarios
         const nuevoUsuario = await pool.query(
             'INSERT INTO usuarios (nombre, email, password, verificado, codigo_verificacion, codigo_expiracion) VALUES ($1, $2, $3, false, $4, $5) RETURNING *',
             [nombre, email, password, codigo, expiracion]
@@ -86,7 +84,7 @@ app.post('/registro', async (req, res) => {
 
         // Enviar correo
         const mailOptions = {
-            from: 'MIND DEVS <tu_correo@gmail.com>',
+            from: `"MIND DEVS" <${process.env.EMAIL_USER}>`,
             to: email,
             subject: 'Tu código de verificación',
             text: `Hola ${nombre}, tu código es: ${codigo}. Expira en 10 minutos.`
@@ -449,8 +447,6 @@ app.get('/usuarios/:id/insignias', async (req, res) => {
     }
 });
 
-// ...
-
 // RUTA PARA EL FORMULARIO DE AYUDA (CONTACTO)
 app.post('/contacto', async (req, res) => {
     try {
@@ -482,8 +478,6 @@ app.post('/contacto', async (req, res) => {
     }
 });
 
-// ...
-
 // 1. SOLICITAR RECUPERACIÓN (Envía el código)
 app.post('/solicitar-recuperacion', async (req, res) => {
     try {
@@ -508,7 +502,7 @@ app.post('/solicitar-recuperacion', async (req, res) => {
 
         // Enviar correo
         const mailOptions = {
-            from: '"Seguridad MIND DEVS" <nainjuarez8@gmail.com>',
+            from: `"Seguridad MIND DEVS" <${process.env.EMAIL_USER}>`,
             to: email,
             subject: 'Recuperar Contraseña',
             text: `Tu código para restablecer contraseña es: ${codigo}. Expira en 10 min.`
