@@ -6,11 +6,15 @@ const nodemailer = require('nodemailer');
 // Configuración del correo
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // true para puerto 465, false para otros
+    port: 587,
+    secure: false, // IMPORTANTE: debe ser false para el puerto 587
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
+    },
+    // Esto ayuda si Render tiene problemas con los certificados de seguridad
+    tls: {
+        rejectUnauthorized: false
     }
 });
 
